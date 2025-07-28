@@ -1,0 +1,145 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Case {
+  caseId              String   @id
+  caseTypeId          String
+  label               String
+  createdBy           String
+  updatedBy           String
+  updatedAt           DateTime @updatedAt
+  createdAt           DateTime @default(now())
+  status              String
+  currentAssignmentId String?
+  metadata            Json     @default("{}")
+
+  assignments Assignment[]
+  histories   History[]
+  sessions    Session[]
+  attachments Attachment[]
+
+  @@map("cases")
+}
+
+model Assignment {
+  assignmentId            String   @id
+  caseId                  String
+  processId               String
+  assignmentKey           String
+  createdAt               DateTime @default(now())
+  status                  String
+  assignedTo              String
+  assignedToType          String
+  metadata                Json     @default("{}")
+  label                   String
+  caseType                String
+  isPreviousActionAllowed Boolean  @default(false)
+  isStrict                Boolean  @default(false)
+
+  case Case @relation(fields: [caseId], references: [caseId], onDelete: Cascade)
+
+  @@map("assignments")
+}
+
+model History {
+  historyId   String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  caseId      String
+  description String
+  createdBy   String
+
+  case Case @relation(fields: [caseId], references: [caseId], onDelete: Cascade)
+
+  @@map("histories")
+}
+
+model Session {
+  sessionId String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  caseId    String
+  createdBy String
+
+  case Case @relation(fields: [caseId], references: [caseId], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Operator {
+  operatorId String   @id
+  userName   String
+  workGroups Json     @default("[]")
+  workQueues Json     @default("[]")
+  role       String
+  createdBy  String
+  createdAt  DateTime @default(now())
+  updatedBy  String
+  updatedAt  DateTime @updatedAt
+
+  @@map("operators")
+}
+
+model WorkQueue {
+  key       String   @id
+  label     String
+  workGroup String
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedBy String
+  updatedAt DateTime @updatedAt
+
+  @@map("workqueues")
+}
+
+model Schema {
+  id         String   @id
+  schemaData Json
+  createdBy  String
+  createdAt  DateTime @default(now())
+  updatedBy  String
+  updatedAt  DateTime @updatedAt
+
+  @@map("schemas")
+}
+
+model Values {
+  key       String   @id @default(uuid())
+  type      String
+  label     String
+  value     String
+  sort      Int
+  workGroup String
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedBy String
+  updatedAt DateTime @updatedAt
+
+  @@map("values")
+}
+
+model Attachment {
+  id           String   @id @default(cuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  base64Data   String   @db.LongText
+  caseId       String
+  uploadedBy   String
+  uploadedAt   DateTime @default(now())
+
+  case Case @relation(fields: [caseId], references: [caseId], onDelete: Cascade)
+
+  @@map("attachments")
+}
